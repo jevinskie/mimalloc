@@ -34,6 +34,7 @@ option(MI_NO_PADDING        "Force no use of padding even in DEBUG mode etc." OF
 option(MI_INSTALL_TOPLEVEL  "Install directly into $CMAKE_INSTALL_PREFIX instead of PREFIX/lib/mimalloc-version" OFF)
 option(MI_NO_THP            "Disable transparent huge pages support on Linux/Android for the mimalloc process only" OFF)
 option(MI_EXTRA_CPPDEFS     "Extra pre-processor definitions (use as `-DMI_EXTRA_CPPDEFS=\"opt1=val1;opt2=val2\"`)" "")
+option(MI_OPT               "Build with extra optimizations" OFF)
 
 # deprecated options
 option(MI_WIN_USE_FLS       "Use Fiber local storage on Windows to detect thread termination (deprecated)" OFF)
@@ -266,6 +267,10 @@ endif()
 if(MI_SHOW_ERRORS)
   message(STATUS "Enable printing of error and warning messages by default (MI_SHOW_ERRORS=ON)")
   list(APPEND mi_defines MI_SHOW_ERRORS=1)
+endif()
+
+if(MI_OPT)
+  list(APPEND mi_cflags -g -O3 -fvisibility-inlines-hidden -fvisibility-inlines-hidden-static-local-var -flto=full)
 endif()
 
 if(MI_DEBUG_TSAN)
