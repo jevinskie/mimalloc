@@ -629,7 +629,7 @@ install(FILES cmake/mimalloc-config-version.cmake DESTINATION ${mi_install_cmake
 if (MI_BUILD_OBJECT)
   add_library(mimalloc-obj OBJECT src/static.c)
   set_property(TARGET mimalloc-obj PROPERTY POSITION_INDEPENDENT_CODE ON)
-  target_compile_definitions(mimalloc-obj PRIVATE ${mi_defines})
+  target_compile_definitions(mimalloc-obj PRIVATE ${mi_defines} MI_OBJECT_LIB_EXPORT)
   target_compile_options(mimalloc-obj PRIVATE ${mi_cflags} ${mi_cflags_static})
   target_include_directories(mimalloc-obj PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
