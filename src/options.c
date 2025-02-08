@@ -364,6 +364,7 @@ static void mi_add_stderr_output(void) {
 static _Atomic(size_t) error_count;   // = 0;  // when >= max_error_count stop emitting errors
 static _Atomic(size_t) warning_count; // = 0;  // when >= max_warning_count stop emitting warnings
 
+#if 0
 // When overriding malloc, we may recurse into mi_vfprintf if an allocation
 // inside the C runtime causes another message.
 // In some cases (like on macOS) the loader already allocates which
@@ -398,6 +399,10 @@ static void mi_recurse_exit(void) {
   #endif
   mi_recurse_exit_prim();
 }
+#else
+static inline bool mi_recurse_enter(void) { return false; }
+static inline void mi_recurse_exit(void) {}
+#endif
 
 void _mi_fputs(mi_output_fun* out, void* arg, const char* prefix, const char* message) {
   if (out==NULL || (void*)out==(void*)stdout || (void*)out==(void*)stderr) { // TODO: use mi_out_stderr for stderr?
