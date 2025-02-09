@@ -146,6 +146,13 @@ void _mi_prim_thread_associate_default_heap(mi_heap_t* heap);
 
 #define MI_HAS_TLS_SLOT    1
 
+__attribute__((always_inline, const))
+static inline void** _mi_os_tsd_get_base(void) mi_attr_noexcept {
+  uint64_t tsd;
+  __asm__("\n\tmrs %0, TPIDRRO_EL0\n\t" : "=r" (tsd));
+  return (void**)(uintptr_t)tsd;
+}
+
 static inline void* mi_prim_tls_slot(size_t slot) mi_attr_noexcept {
   void* res;
   const size_t ofs = (slot*sizeof(void*));
@@ -164,7 +171,7 @@ static inline void* mi_prim_tls_slot(size_t slot) mi_attr_noexcept {
   #elif defined(__aarch64__)
     void** tcb; MI_UNUSED(ofs);
     #if defined(__APPLE__) // M1, issue #343
-    __asm__ volatile ("mrs %0, tpidrro_el0\nbic %0, %0, #7" : "=r" (tcb));
+    tcb = _mi_os_tsd_get_base();
     #else
     __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tcb));
     #endif
@@ -194,7 +201,7 @@ static inline void mi_prim_tls_slot_set(size_t slot, void* value) mi_attr_noexce
   #elif defined(__aarch64__)
     void** tcb; MI_UNUSED(ofs);
     #if defined(__APPLE__) // M1, issue #343
-    __asm__ volatile ("mrs %0, tpidrro_el0\nbic %0, %0, #7" : "=r" (tcb));
+    tcb = _mi_os_tsd_get_base();
     #else
     __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tcb));
     #endif
@@ -344,7 +351,8 @@ static inline mi_heap_t* mi_prim_get_default_heap(void);
 #if defined(MI_MALLOC_OVERRIDE) || 1
 #if defined(__APPLE__) // macOS
   #define MI_TLS_SLOT               89  // seems unused?
-  #define MI_TLS_SLOT_HEAP_DEFAULT  6
+  #define MI_TLS_SLOT_HEAP_DEFAULT  6   // wine
+  #define MI_TLS_SLOT_UNUSED        11  // wine64
   // other possible unused ones are 9, 29, __PTK_FRAMEWORK_JAVASCRIPTCORE_KEY4 (94), __PTK_FRAMEWORK_GC_KEY9 (112) and __PTK_FRAMEWORK_OLDGC_KEY9 (89)
   // see <https://github.com/rweichler/substrate/blob/master/include/pthread_machdep.h>
 #elif defined(__OpenBSD__)
