@@ -274,6 +274,15 @@ static inline void mi_prim_tls_slot_set(size_t slot, void* value) mi_attr_noexce
 #endif
 
 
+#if defined(MI_MALLOC_OVERRIDE) || 1
+#if defined(__APPLE__) // macOS
+  #define MI_TLS_SLOT               89  // seems unused?
+  #define MI_TLS_SLOT_HEAP_DEFAULT  6   // wine
+  #define MI_TLS_SLOT_UNUSED        11  // wine64
+  // other possible unused ones are 9, 29, __PTK_FRAMEWORK_JAVASCRIPTCORE_KEY4 (94), __PTK_FRAMEWORK_GC_KEY9 (112) and __PTK_FRAMEWORK_OLDGC_KEY9 (89)
+  // see <https://github.com/rweichler/substrate/blob/master/include/pthread_machdep.h>
+#endif
+#endif
 
 // defined in `init.c`; do not use these directly
 // extern mi_decl_thread mi_heap_t* _mi_heap_default;  // default heap to allocate from
@@ -287,6 +296,11 @@ static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept;
 __attribute__((always_inline, const))
 static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
   return (mi_threadid_t)*_mi_os_tsd_get_base();
+}
+
+__attribute__((always_inline, const))
+static inline mi_heap_t* _mi_heap_default(void) mi_attr_noexcept {
+  return (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
 }
 
 #elif defined(MI_PRIM_THREAD_ID)
@@ -356,13 +370,7 @@ We try to circumvent this in an efficient way:
 static inline mi_heap_t* mi_prim_get_default_heap(void);
 
 #if defined(MI_MALLOC_OVERRIDE) || 1
-#if defined(__APPLE__) // macOS
-  #define MI_TLS_SLOT               89  // seems unused?
-  #define MI_TLS_SLOT_HEAP_DEFAULT  6   // wine
-  #define MI_TLS_SLOT_UNUSED        11  // wine64
-  // other possible unused ones are 9, 29, __PTK_FRAMEWORK_JAVASCRIPTCORE_KEY4 (94), __PTK_FRAMEWORK_GC_KEY9 (112) and __PTK_FRAMEWORK_OLDGC_KEY9 (89)
-  // see <https://github.com/rweichler/substrate/blob/master/include/pthread_machdep.h>
-#elif defined(__OpenBSD__)
+#if defined(__OpenBSD__)
   // use end bytes of a name; goes wrong if anyone uses names > 23 characters (ptrhread specifies 16)
   // see <https://github.com/openbsd/src/blob/master/lib/libc/include/thread_private.h#L371>
   #define MI_TLS_PTHREAD_SLOT_OFS   (6*sizeof(int) + 4*sizeof(void*) + 24)

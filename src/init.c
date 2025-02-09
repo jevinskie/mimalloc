@@ -561,7 +561,7 @@ bool mi_decl_noinline _mi_preloading(void) {
 // Called once by the process loader from `src/prim/prim.c`
 void _mi_process_load(void) {
   mi_heap_main_init();
-  #if defined(__APPLE__) || defined(MI_TLS_RECURSE_GUARD)
+  #if (defined(__APPLE__) || defined(MI_TLS_RECURSE_GUARD)) && 0
   volatile mi_heap_t* dummy = _mi_heap_default; // access TLS to allocate it before setting tls_initialized to true;
   if (dummy == NULL) return;                    // use dummy or otherwise the access may get optimized away (issue #697)
   #endif
