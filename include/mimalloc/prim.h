@@ -282,7 +282,14 @@ extern bool _mi_process_is_initialized;             // has mi_process_init been 
 static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept;
 
 // Get a unique id for the current thread.
-#if defined(MI_PRIM_THREAD_ID)
+#if defined(__APPLE__) && defined(__aarch64__)
+
+__attribute__((always_inline, const))
+static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
+  return (mi_threadid_t)*_mi_os_tsd_get_base();
+}
+
+#elif defined(MI_PRIM_THREAD_ID)
 
 static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
   return MI_PRIM_THREAD_ID();  // used for example by CPython for a free threaded build (see python/cpython#115488)
