@@ -5,6 +5,7 @@ terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
 #pragma once
+#include "mimalloc.h"
 #ifndef MIMALLOC_PRIM_H
 #define MIMALLOC_PRIM_H
 
@@ -300,7 +301,12 @@ static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
 
 __attribute__((always_inline, const))
 static inline mi_heap_t* _mi_heap_default(void) mi_attr_noexcept {
-  return (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
+  mi_heap_t* res = (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
+  if (!res) {
+    __builtin_debugtrap();
+  }
+  return res;
+  // return (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
 }
 
 #elif defined(MI_PRIM_THREAD_ID)
