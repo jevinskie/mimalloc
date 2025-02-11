@@ -4,6 +4,7 @@ This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
+#include <sys/_types/_null.h>
 #if !defined(MI_IN_ALLOC_C)
 #error "this file should be included from 'alloc.c' (so aliases can work from alloc-override)"
 // add includes help an IDE
@@ -17,7 +18,7 @@ static void   mi_check_padding(const mi_page_t* page, const mi_block_t* block);
 static bool   mi_check_is_double_free(const mi_page_t* page, const mi_block_t* block);
 static size_t mi_page_usable_size_of(const mi_page_t* page, const mi_block_t* block);
 static void   mi_stat_free(const mi_page_t* page, const mi_block_t* block);
-
+extern __attribute__((noreturn,cold)) void abort(void);
 
 // ------------------------------------------------------
 // Free
@@ -143,7 +144,7 @@ static inline mi_segment_t* mi_checked_ptr_segment(const void* p, const char* ms
 void mi_free(void* p) mi_attr_noexcept
 {
   mi_segment_t* const segment = mi_checked_ptr_segment(p,"mi_free");
-  if mi_unlikely(segment==NULL) return;
+  if (mi_unlikely(mi_unlikely(segment==NULL) && mi_unlikely(p != NULL))) abort();
 
   const bool is_local = (_mi_prim_thread_id() == mi_atomic_load_relaxed(&segment->thread_id));
   mi_page_t* const page = _mi_segment_page_of(segment, p);
