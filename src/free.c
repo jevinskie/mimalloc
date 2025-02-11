@@ -4,7 +4,6 @@ This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
-#include <sys/_types/_null.h>
 #if !defined(MI_IN_ALLOC_C)
 #error "this file should be included from 'alloc.c' (so aliases can work from alloc-override)"
 // add includes help an IDE

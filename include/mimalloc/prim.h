@@ -399,10 +399,12 @@ static inline mi_heap_t* mi_prim_get_default_heap(void);
 #endif
 
 
-#if MI_TLS_SLOT && !(defined(__APPLE__) && defined(__aarch64__))
+#if MI_TLS_SLOT
 # if !defined(MI_HAS_TLS_SLOT)
 #  error "trying to use a TLS slot for the default heap, but the mi_prim_tls_slot primitives are not defined"
 # endif
+
+#if !(defined(__APPLE__) && defined(__aarch64__))
 
 static inline mi_heap_t* mi_prim_get_default_heap(void) {
   mi_heap_t* heap = (mi_heap_t*)mi_prim_tls_slot(MI_TLS_SLOT);
@@ -416,6 +418,8 @@ static inline mi_heap_t* mi_prim_get_default_heap(void) {
   #endif
   return heap;
 }
+
+#endif
 
 #elif defined(MI_TLS_PTHREAD_SLOT_OFS)
 
