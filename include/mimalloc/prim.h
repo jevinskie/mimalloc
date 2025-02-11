@@ -5,7 +5,6 @@ terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
 #pragma once
-#include "mimalloc.h"
 #ifndef MIMALLOC_PRIM_H
 #define MIMALLOC_PRIM_H
 
@@ -289,24 +288,34 @@ static inline void mi_prim_tls_slot_set(size_t slot, void* value) mi_attr_noexce
 // extern mi_decl_thread mi_heap_t* _mi_heap_default;  // default heap to allocate from
 extern bool _mi_process_is_initialized;             // has mi_process_init been called?
 
-static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept;
+static mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept;
 
 // Get a unique id for the current thread.
 #if defined(__APPLE__) && defined(__aarch64__)
 
-__attribute__((always_inline, const))
-static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
-  return (mi_threadid_t)*_mi_os_tsd_get_base();
+__attribute__((noinline, const))
+static mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
+  return *(mi_threadid_t*)_mi_os_tsd_get_base();
 }
 
-__attribute__((always_inline, const))
-static inline mi_heap_t* _mi_heap_default(void) mi_attr_noexcept {
+__attribute__((noinline, const))
+static mi_heap_t* _mi_heap_default(void) mi_attr_noexcept {
   mi_heap_t* res = (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
   if (!res) {
     __builtin_debugtrap();
   }
   return res;
   // return (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
+}
+
+__attribute__((noinline, const))
+static mi_heap_t* mi_prim_get_default_heap(void) mi_attr_noexcept {
+    mi_heap_t* res = (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
+    if (!res) {
+      __builtin_debugtrap();
+    }
+    return res;
+    // return (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
 }
 
 #elif defined(MI_PRIM_THREAD_ID)
@@ -390,7 +399,7 @@ static inline mi_heap_t* mi_prim_get_default_heap(void);
 #endif
 
 
-#if MI_TLS_SLOT
+#if MI_TLS_SLOT && !(defined(__APPLE__) && defined(__aarch64__))
 # if !defined(MI_HAS_TLS_SLOT)
 #  error "trying to use a TLS slot for the default heap, but the mi_prim_tls_slot primitives are not defined"
 # endif
@@ -435,13 +444,14 @@ static inline mi_heap_t* mi_prim_get_default_heap(void) {
 }
 
 #else // default using a thread local variable; used on most platforms.
-
+#if !(defined(__APPLE__) && defined(__aarch64__))
 static inline mi_heap_t* mi_prim_get_default_heap(void) {
   #if defined(MI_TLS_RECURSE_GUARD)
   if (mi_unlikely(!_mi_process_is_initialized)) return _mi_heap_main_get();
   #endif
   return _mi_heap_default;
 }
+#endif
 
 #endif  // mi_prim_get_default_heap()
 
