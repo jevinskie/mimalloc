@@ -288,28 +288,18 @@ static inline void mi_prim_tls_slot_set(size_t slot, void* value) mi_attr_noexce
 // extern mi_decl_thread mi_heap_t* _mi_heap_default;  // default heap to allocate from
 extern bool _mi_process_is_initialized;             // has mi_process_init been called?
 
-static mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept;
+static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept;
 
 // Get a unique id for the current thread.
 #if defined(__APPLE__) && defined(__aarch64__)
 
 __attribute__((noinline, const))
-static mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
+static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
   return *(mi_threadid_t*)_mi_os_tsd_get_base();
 }
 
 __attribute__((noinline, const))
-static mi_heap_t* _mi_heap_default(void) mi_attr_noexcept {
-  mi_heap_t* res = (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
-  if (!res) {
-    __builtin_debugtrap();
-  }
-  return res;
-  // return (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
-}
-
-__attribute__((noinline, const))
-static mi_heap_t* mi_prim_get_default_heap(void) mi_attr_noexcept {
+static inline mi_heap_t* mi_prim_get_default_heap(void) mi_attr_noexcept {
     mi_heap_t* res = (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
     if (!res) {
       __builtin_debugtrap();
@@ -440,6 +430,10 @@ static inline mi_heap_t* mi_prim_get_default_heap(void) {
 }
 
 #elif defined(MI_TLS_PTHREAD)
+
+#if defined(__APPLE__) && defined(__arm64__)
+#error bad
+#endif
 
 extern pthread_key_t _mi_heap_default_key;
 static inline mi_heap_t* mi_prim_get_default_heap(void) {

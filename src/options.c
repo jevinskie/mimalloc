@@ -364,7 +364,7 @@ static void mi_add_stderr_output(void) {
 static _Atomic(size_t) error_count;   // = 0;  // when >= max_error_count stop emitting errors
 static _Atomic(size_t) warning_count; // = 0;  // when >= max_warning_count stop emitting warnings
 
-#if 0
+#if 1
 // When overriding malloc, we may recurse into mi_vfprintf if an allocation
 // inside the C runtime causes another message.
 // In some cases (like on macOS) the loader already allocates which
@@ -374,7 +374,8 @@ static _Atomic(size_t) warning_count; // = 0;  // when >= max_warning_count stop
 // variables on demand. This is why we use a _mi_preloading test on such
 // platforms. However, C code generator may move the initial thread local address
 // load before the `if` and we therefore split it out in a separate function.
-static mi_decl_thread bool recurse = false;
+// static mi_decl_thread bool recurse = false;
+static bool recurse = false;
 
 static mi_decl_noinline bool mi_recurse_enter_prim(void) {
   if (recurse) return false;

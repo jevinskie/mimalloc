@@ -844,7 +844,7 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
 // Thread init/done
 //----------------------------------------------------------------
 
-#if defined(MI_USE_PTHREADS)
+#if defined(MI_USE_PTHREADS) && !(defined(__APPLE__) && defined(__arm64__))
 
 // use pthread local storage keys to detect thread ending
 // (and used with MI_TLS_PTHREADS for the default heap)
@@ -871,6 +871,20 @@ void _mi_prim_thread_associate_default_heap(mi_heap_t* heap) {
   if (_mi_heap_default_key != (pthread_key_t)(-1)) {  // can happen during recursive invocation on freeBSD
     pthread_setspecific(_mi_heap_default_key, heap);
   }
+}
+
+#elif defined(__APPLE__) && defined(__arm64__)
+
+void _mi_prim_thread_init_auto_done(void) {
+  // nothing
+}
+
+void _mi_prim_thread_done_auto_done(void) {
+  // nothing
+}
+
+void _mi_prim_thread_associate_default_heap(mi_heap_t* heap) {
+  _mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT] = heap;
 }
 
 #else
