@@ -573,7 +573,7 @@ void _mi_process_load(void) {
   if (_mi_is_redirected()) _mi_verbose_message("malloc is redirected.\n");
 
   // show message from the redirector (if present)
-  const char* msg = "TESTTEST";
+  const char* msg = NULL;
   _mi_allocator_init(&msg);
   if (msg != NULL && (mi_option_is_enabled(mi_option_verbose) || mi_option_is_enabled(mi_option_show_errors))) {
     _mi_fputs(NULL,NULL,NULL,msg);

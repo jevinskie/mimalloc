@@ -293,12 +293,12 @@ static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept;
 // Get a unique id for the current thread.
 #if defined(__APPLE__) && defined(__aarch64__)
 
-__attribute__((noinline, const))
+__attribute__((always_inline, const))
 static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
   return *(mi_threadid_t*)_mi_os_tsd_get_base();
 }
 
-__attribute__((noinline, const))
+__attribute__((always_inline, const))
 static inline mi_heap_t* mi_prim_get_default_heap(void) mi_attr_noexcept {
     mi_heap_t* res = (mi_heap_t*)_mi_os_tsd_get_base()[MI_TLS_SLOT_HEAP_DEFAULT];
     if (!res) {
