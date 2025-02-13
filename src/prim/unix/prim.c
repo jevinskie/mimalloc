@@ -769,13 +769,16 @@ bool _mi_prim_getenv(const char* name, char* result, size_t result_size) {
 //----------------------------------------------------------------
 
 #if defined(__APPLE__) && defined(MAC_OS_X_VERSION_10_15) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15)
-#include <CommonCrypto/CommonCryptoError.h>
-#include <CommonCrypto/CommonRandom.h>
+// #include <CommonCrypto/CommonCryptoError.h>
+// #include <CommonCrypto/CommonRandom.h>
+
+extern int getentropy(void *buffer, size_t size);
 
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {
   // We prefer CCRandomGenerateBytes as it returns an error code while arc4random_buf
   // may fail silently on macOS. See PR #390, and <https://opensource.apple.com/source/Libc/Libc-1439.40.11/gen/FreeBSD/arc4random.c.auto.html>
-  return (CCRandomGenerateBytes(buf, buf_len) == kCCSuccess);
+  // return (CCRandomGenerateBytes(buf, buf_len) == kCCSuccess);
+  return (getentropy(buf, buf_len) == 0);
 }
 
 #elif defined(__ANDROID__) || defined(__DragonFly__) || \
