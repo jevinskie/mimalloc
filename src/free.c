@@ -150,8 +150,6 @@ void mi_free(void* p) mi_attr_noexcept
     return;
   }
 
-  if (mi_unlikely(mi_unlikely(segment==NULL) && mi_unlikely(p != NULL))) abort();
-
   const bool is_local = (_mi_prim_thread_id() == mi_atomic_load_relaxed(&segment->thread_id));
   mi_page_t* const page = _mi_segment_page_of(segment, p);
 
