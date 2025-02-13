@@ -204,7 +204,12 @@ extern inline void* _mi_heap_malloc_zero_ex(mi_heap_t* heap, size_t size, bool z
 }
 
 extern inline void* _mi_heap_malloc_zero(mi_heap_t* heap, size_t size, bool zero) mi_attr_noexcept {
-  return _mi_heap_malloc_zero_ex(heap, size, zero, 0);
+  // return _mi_heap_malloc_zero_ex(heap, size, zero, 0);
+  void *p = _mi_heap_malloc_zero_ex(heap, size, zero, 0);
+  if (!p || (uintptr_t)p < (uintptr_t)1024) {
+    __builtin_debugtrap();
+  }
+  return p;
 }
 
 mi_decl_nodiscard extern inline mi_decl_restrict void* mi_heap_malloc(mi_heap_t* heap, size_t size) mi_attr_noexcept {
