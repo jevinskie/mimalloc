@@ -123,7 +123,7 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config )
   if (si.dwAllocationGranularity > 0) { config->alloc_granularity = si.dwAllocationGranularity; }
   // get virtual address bits
   if ((uintptr_t)si.lpMaximumApplicationAddress > 0) {
-    const size_t vbits = MI_INTPTR_BITS - mi_clz((uintptr_t)si.lpMaximumApplicationAddress);
+    const size_t vbits = MI_SIZE_BITS - mi_clz((uintptr_t)si.lpMaximumApplicationAddress);
     config->virtual_address_bits = vbits;
   }
 
@@ -154,8 +154,8 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config )
     if (pGetPhysicallyInstalledSystemMemory != NULL) {
       ULONGLONG memInKiB = 0;
       if ((*pGetPhysicallyInstalledSystemMemory)(&memInKiB)) {
-        if (memInKiB > 0 && memInKiB < (SIZE_MAX / MI_KiB)) {
-          config->physical_memory = (size_t)memInKiB * MI_KiB;
+        if (memInKiB > 0 && memInKiB <= SIZE_MAX) {
+          config->physical_memory_in_kib = (size_t)memInKiB;
         }
       }
     }
@@ -643,7 +643,7 @@ static void NTAPI mi_win_main(PVOID module, DWORD reason, LPVOID reserved) {
   }
   else if (reason==DLL_THREAD_DETACH && !_mi_is_redirected()) {
     _mi_thread_done(NULL);
-  }    
+  }
 }
 
 
@@ -651,7 +651,7 @@ static void NTAPI mi_win_main(PVOID module, DWORD reason, LPVOID reserved) {
   #define MI_PRIM_HAS_PROCESS_ATTACH  1
 
   // Windows DLL: easy to hook into process_init and thread_done
-  __declspec(dllexport) BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved) {
+  BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved) {
     mi_win_main((PVOID)inst,reason,reserved);
     return TRUE;
   }

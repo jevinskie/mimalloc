@@ -425,8 +425,13 @@ endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "AppleClang|Clang|GNU|Intel" AND NOT CMAKE_SYSTEM_NAME MATCHES "Haiku")
   if(MI_OPT_ARCH)
-    if(MI_ARCH STREQUAL "arm64")
-      set(MI_OPT_ARCH_FLAGS "-march=armv8.1-a")         # fast atomics
+    if(APPLE AND CMAKE_C_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_OSX_ARCHITECTURES)   # to support multi-arch binaries (#999)
+      set(MI_OPT_ARCH_FLAGS "")
+      if("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES)
+        list(APPEND MI_OPT_ARCH_FLAGS "-Xarch_arm64;-march=armv8.1-a")
+      endif()
+    elseif(MI_ARCH STREQUAL "arm64")
+      set(MI_OPT_ARCH_FLAGS "-march=armv8.1-a")  # fast atomics
     endif()
   endif()
 endif()
@@ -685,15 +690,41 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/mimalloc.pc"
 if (MI_BUILD_TESTS)
   enable_testing()
 
+  # static link tests
   foreach(TEST_NAME api api-fill stress)
     add_executable(mimalloc-test-${TEST_NAME} test/test-${TEST_NAME}.c)
     target_compile_definitions(mimalloc-test-${TEST_NAME} PRIVATE ${mi_defines})
     target_compile_options(mimalloc-test-${TEST_NAME} PRIVATE ${mi_cflags})
     target_include_directories(mimalloc-test-${TEST_NAME} PRIVATE include)
-    target_link_libraries(mimalloc-test-${TEST_NAME} PRIVATE mimalloc ${mi_libraries})
-
+    if(MI_BUILD_SHARED AND (MI_TRACK_ASAN OR MI_DEBUG_TSAN OR MI_DEBUG_UBSAN))
+      target_link_libraries(mimalloc-test-${TEST_NAME} PRIVATE mimalloc ${mi_libraries})
+    else()
+      target_link_libraries(mimalloc-test-${TEST_NAME} PRIVATE mimalloc-static ${mi_libraries})
+    endif()
     add_test(NAME test-${TEST_NAME} COMMAND mimalloc-test-${TEST_NAME})
   endforeach()
+
+  # dynamic override test
+  if(MI_BUILD_SHARED AND NOT (MI_TRACK_ASAN OR MI_DEBUG_TSAN OR MI_DEBUG_UBSAN))
+    add_executable(mimalloc-test-stress-dynamic test/test-stress.c)
+    target_compile_definitions(mimalloc-test-stress-dynamic PRIVATE ${mi_defines} "USE_STD_MALLOC=1")
+    if(WIN32)
+      target_compile_definitions(mimalloc-test-stress-dynamic PRIVATE "MI_LINK_VERSION=1")
+    endif()
+    target_compile_options(mimalloc-test-stress-dynamic PRIVATE ${mi_cflags})
+    target_include_directories(mimalloc-test-stress-dynamic PRIVATE include)
+    target_link_libraries(mimalloc-test-stress-dynamic PRIVATE mimalloc ${mi_libraries})  # mi_version
+    if(WIN32)
+      add_test(NAME test-stress-dynamic COMMAND ${CMAKE_COMMAND} -E env MIMALLOC_SHOW_STATS=1 $<TARGET_FILE:mimalloc-test-stress-dynamic>)
+    else()
+      if(APPLE)
+        set(LD_PRELOAD "DYLD_INSERT_LIBRARIES")
+      else()
+        set(LD_PRELOAD "LD_PRELOAD")
+      endif()
+      add_test(NAME test-stress-dynamic COMMAND ${CMAKE_COMMAND} -E env MIMALLOC_SHOW_STATS=1 ${LD_PRELOAD}=$<TARGET_FILE:mimalloc> $<TARGET_FILE:mimalloc-test-stress-dynamic>)
+    endif()
+  endif()
 endif()
 
 # -----------------------------------------------------------------------------
