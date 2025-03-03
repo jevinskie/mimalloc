@@ -550,7 +550,8 @@ static bool mi_arena_try_purge(mi_arena_t* arena, mi_msecs_t now, bool force)
 
   // reset expire (if not already set concurrently)
   mi_atomic_casi64_strong_acq_rel(&arena->purge_expire, &expire, (mi_msecs_t)0);
-  
+  _mi_stat_counter_increase(&_mi_stats_main.arena_purges, 1);
+
   // potential purges scheduled, walk through the bitmap
   bool any_purged = false;
   bool full_purge = true;
@@ -949,6 +950,11 @@ void mi_debug_show_arenas(void) mi_attr_noexcept {
   if (show_inuse)     _mi_verbose_message("total inuse blocks    : %zu\n", inuse_total);
   //if (show_abandoned) _mi_verbose_message("total abandoned blocks: %zu\n", abandoned_total);
   //if (show_purge)     _mi_verbose_message("total purgeable blocks: %zu\n", purge_total);
+}
+
+
+void mi_arenas_print(void) mi_attr_noexcept {
+  mi_debug_show_arenas();
 }
 
 
